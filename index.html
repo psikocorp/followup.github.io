@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Signal — Client Follow-up Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0D10;
+    --panel:#14171B;
+    --panel-2:#1A1E23;
+    --border:#262B31;
+    --border-soft:#1D2126;
+    --text:#E8EAED;
+    --muted:#8A929C;
+    --muted-2:#5C636D;
+    --accent:#4C9AFF;
+    --accent-dim:#2B4A72;
+    --green:#35D07F;
+    --green-dim:#173325;
+    --amber:#F2B705;
+    --amber-dim:#3A2E08;
+    --red:#EF4444;
+    --red-dim:#3A1414;
+    --radius:10px;
+    --mono:'JetBrains Mono', ui-monospace, monospace;
+    --sans:'Inter', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(76,154,255,0.06), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:22px 28px;border-bottom:1px solid var(--border);
+    gap:16px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{
+    width:34px;height:34px;border-radius:50%;
+    background:var(--panel-2);border:1px solid var(--border);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    padding:5px 0;
+  }
+  .brand-mark i{width:5px;height:5px;border-radius:50%;background:var(--muted-2);}
+  .brand-mark i:nth-child(1){background:var(--red);box-shadow:0 0 6px var(--red);}
+  .brand-mark i:nth-child(2){background:var(--amber);box-shadow:0 0 6px var(--amber);}
+  .brand-mark i:nth-child(3){background:var(--green);box-shadow:0 0 6px var(--green);}
+  .brand h1{
+    font-family:var(--mono);font-size:16px;letter-spacing:0.14em;
+    margin:0;font-weight:700;text-transform:uppercase;
+  }
+  .brand p{margin:2px 0 0;font-size:12.5px;color:var(--muted);}
+  .topbar-actions{display:flex;align-items:center;gap:10px;}
+  .sync-status{
+    font-family:var(--mono);font-size:11.5px;color:var(--muted-2);
+    display:flex;align-items:center;gap:6px;
+  }
+  .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+  .sync-dot.err{background:var(--red);}
+  .sync-dot.loading{background:var(--amber);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+  button{font-family:var(--sans);cursor:pointer;}
+  .btn{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+    padding:9px 16px;border-radius:8px;font-size:13.5px;font-weight:600;
+    transition:border-color .15s, background .15s;
+  }
+  .btn:hover{border-color:var(--muted-2);}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#04101E;}
+  .btn-primary:hover{background:#66aaff;border-color:#66aaff;}
+  .btn-ghost{background:transparent;border-color:transparent;color:var(--muted);}
+  .btn-ghost:hover{color:var(--text);}
+  .btn-icon{padding:9px;line-height:0;}
+
+  /* ---------- main ---------- */
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 28px 60px;}
+
+  .config-banner{
+    background:var(--panel);border:1px solid var(--amber);border-left-width:3px;
+    border-radius:var(--radius);padding:14px 18px;margin-bottom:20px;
+    font-size:13.5px;color:var(--text);display:flex;gap:10px;align-items:flex-start;
+  }
+  .config-banner code{font-family:var(--mono);background:var(--panel-2);padding:1px 6px;border-radius:4px;font-size:12.5px;color:var(--amber);}
+
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+  .stat{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 18px;
+  }
+  .stat .n{font-family:var(--mono);font-size:26px;font-weight:700;}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:0.03em;}
+  .stat.follow .n{color:var(--red);}
+  .stat.waiting .n{color:var(--amber);}
+  .stat.responded .n{color:var(--green);}
+
+  .controls{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;flex-wrap:wrap;}
+  .tabs{display:flex;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:4px;}
+  .tab{
+    background:transparent;border:none;color:var(--muted);padding:7px 13px;border-radius:6px;
+    font-size:12.5px;font-weight:600;font-family:var(--sans);
+  }
+  .tab.active{background:var(--panel-2);color:var(--text);}
+  .search{
+    background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);
+    min-width:220px;
+  }
+  .search::placeholder{color:var(--muted-2);}
+
+  /* ---------- table ---------- */
+  .board{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+  .row-head, .row{
+    display:grid;
+    grid-template-columns:34px 1.6fr 1.4fr 1fr 100px 130px 90px;
+    align-items:center;
+    gap:14px;
+    padding:13px 18px;
+  }
+  .row-head{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--muted-2);border-bottom:1px solid var(--border);
+  }
+  .row{border-bottom:1px solid var(--border-soft);position:relative;}
+  .row:last-child{border-bottom:none;}
+  .row:hover{background:rgba(255,255,255,0.015);}
+
+  .signal{display:flex;flex-direction:column;gap:3px;align-items:center;}
+  .signal i{width:6px;height:6px;border-radius:50%;background:#2A2E34;}
+  .signal i.on-red{background:var(--red);box-shadow:0 0 7px var(--red);}
+  .signal i.on-amber{background:var(--amber);box-shadow:0 0 7px var(--amber);}
+  .signal i.on-green{background:var(--green);box-shadow:0 0 7px var(--green);}
+
+  .client .name{font-weight:600;font-size:14px;}
+  .client .email{color:var(--muted);font-size:12px;margin-top:2px;font-family:var(--mono);}
+  .subject{font-size:13px;color:var(--text);}
+  .subject .notes{color:var(--muted-2);font-size:11.5px;margin-top:2px;}
+  .sent-date{font-family:var(--mono);font-size:12.5px;color:var(--muted);}
+
+  .status-pill{
+    font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:0.03em;
+    padding:5px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;
+    white-space:nowrap;width:fit-content;
+  }
+  .status-pill.follow{background:var(--red-dim);color:var(--red);}
+  .status-pill.waiting{background:var(--amber-dim);color:var(--amber);}
+  .status-pill.responded{background:var(--green-dim);color:var(--green);}
+
+  .row-actions{display:flex;gap:6px;justify-content:flex-end;}
+  .icon-btn{
+    background:transparent;border:1px solid var(--border);color:var(--muted);
+    width:28px;height:28px;border-radius:6px;font-size:13px;display:flex;align-items:center;justify-content:center;
+  }
+  .icon-btn:hover{color:var(--text);border-color:var(--muted-2);}
+  .icon-btn.respond:hover{color:var(--green);border-color:var(--green);}
+  .icon-btn.del:hover{color:var(--red);border-color:var(--red);}
+
+  .empty{padding:60px 20px;text-align:center;color:var(--muted);}
+  .empty h3{font-family:var(--mono);color:var(--text);margin:0 0 8px;font-size:15px;}
+  .empty p{font-size:13px;margin:0 0 18px;}
+
+  /* ---------- modal ---------- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(4,6,8,0.7);backdrop-filter:blur(2px);
+    display:none;align-items:center;justify-content:center;z-index:50;padding:20px;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    width:100%;max-width:440px;padding:24px;
+  }
+  .modal h2{font-family:var(--mono);font-size:14px;letter-spacing:0.06em;text-transform:uppercase;margin:0 0 18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;}
+  .field input, .field textarea{
+    width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:7px;
+    padding:9px 11px;color:var(--text);font-size:13.5px;font-family:var(--sans);
+  }
+  .field input:focus, .field textarea:focus, .search:focus{outline:none;border-color:var(--accent);}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+  .modal-error{color:var(--red);font-size:12.5px;margin-top:8px;display:none;}
+
+  @media (max-width:820px){
+    .stats-row{grid-template-columns:repeat(2,1fr);}
+    .row-head{display:none;}
+    .row{
+      grid-template-columns:1fr;
+      gap:8px;padding:16px 18px;
+    }
+    .row::before{
+      content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+    }
+    .row .signal{flex-direction:row;position:absolute;top:16px;right:18px;}
+    .row-actions{justify-content:flex-start;margin-top:4px;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><i></i><i></i><i></i></div>
+      <div>
+        <h1>Signal</h1>
+        <p>Client follow-up board</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="sync-status"><span class="sync-dot" id="syncDot"></span><span id="syncText">not connected</span></div>
+      <button class="btn btn-ghost btn-icon" id="refreshBtn" title="Refresh">⟳</button>
+      <button class="btn btn-primary" id="addBtn">+ Log an email</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <div class="config-banner" id="configBanner" style="display:none;">
+      ⚠️ <div>
+        Set your Apps Script URL first. Open <code>index.html</code>, find <code>const SCRIPT_URL</code> near the top of the script, and paste in your deployed Web App URL. See the README for the 5-minute setup.
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat"><div class="n" id="statTotal">0</div><div class="l">TOTAL CLIENTS</div></div>
+      <div class="stat follow"><div class="n" id="statFollow">0</div><div class="l">NEEDS FOLLOW-UP (3+ DAYS)</div></div>
+      <div class="stat waiting"><div class="n" id="statWaiting">0</div><div class="l">WAITING</div></div>
+      <div class="stat responded"><div class="n" id="statResponded">0</div><div class="l">RESPONDED</div></div>
+    </div>
+
+    <div class="controls">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-filter="all">All</button>
+        <button class="tab" data-filter="follow">Follow-up</button>
+        <button class="tab" data-filter="waiting">Waiting</button>
+        <button class="tab" data-filter="responded">Responded</button>
+      </div>
+      <input class="search" id="searchInput" placeholder="Search name or email…" />
+    </div>
+
+    <div class="board">
+      <div class="row-head">
+        <div></div>
+        <div>Client</div>
+        <div>Last subject</div>
+        <div>Last sent</div>
+        <div>Days</div>
+        <div>Status</div>
+        <div></div>
+      </div>
+      <div id="rows"></div>
+      <div class="empty" id="emptyState" style="display:none;">
+        <h3>No records yet</h3>
+        <p>Log the first email you sent to start tracking follow-ups.</p>
+        <button class="btn btn-primary" id="emptyAddBtn">+ Log an email</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add / Edit modal -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h2 id="modalTitle">Log an email</h2>
+      <form id="clientForm">
+        <input type="hidden" id="recordId" />
+        <div class="field">
+          <label>Client name</label>
+          <input type="text" id="clientName" required placeholder="e.g. Rachel Leake" />
+        </div>
+        <div class="field">
+          <label>Client email</label>
+          <input type="email" id="clientEmail" required placeholder="rachel@vaultvirtual.com" />
+        </div>
+        <div class="field">
+          <label>Subject of last email sent</label>
+          <input type="text" id="lastSubject" placeholder="Client & lead management app proposal" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Date last sent</label>
+            <input type="date" id="lastSentDate" required />
+          </div>
+          <div class="field">
+            <label>Responded?</label>
+            <input type="text" id="respondedDisplay" disabled placeholder="Use the ✓ button on the board" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Notes (optional)</label>
+          <textarea id="notes" rows="2" placeholder="Any context worth remembering"></textarea>
+        </div>
+        <div class="modal-error" id="modalError"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script>
+/* =========================================================
+   CONFIG — paste your deployed Apps Script Web App URL here.
+   ========================================================= */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyeWnVdwCWtFrCBEVgwIQDbxEBiUFLeR1QU8X9XOZnCpFRBw9N9jMxeu-5WpDX0YIgaJA/exec";
+const FOLLOWUP_THRESHOLD_DAYS = 3;
+
+let records = [];
+let currentFilter = 'all';
+let currentSearch = '';
+
+const $ = (sel) => document.querySelector(sel);
+const rowsEl = $('#rows');
+const overlay = $('#overlay');
+const form = $('#clientForm');
+
+function isConfigured(){
+  return SCRIPT_URL && !SCRIPT_URL.includes('PASTE_YOUR');
+}
+
+function daysSince(dateStr){
+  if(!dateStr) return null;
+  const sent = new Date(dateStr + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return Math.floor((today - sent) / 86400000);
+}
+
+function statusOf(rec){
+  if(rec.responded === true || rec.responded === 'TRUE' || rec.responded === 'true') return 'responded';
+  const d = daysSince(rec.lastSentDate);
+  if(d === null) return 'waiting';
+  return d >= FOLLOWUP_THRESHOLD_DAYS ? 'follow' : 'waiting';
+}
+
+function fmtDate(dateStr){
+  if(!dateStr) return '—';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function setSync(state, text){
+  const dot = $('#syncDot');
+  dot.className = 'sync-dot' + (state === 'err' ? ' err' : state === 'loading' ? ' loading' : '');
+  $('#syncText').textContent = text;
+}
+
+async function apiGet(){
+  const res = await fetch(SCRIPT_URL, { method:'GET' });
+  const json = await res.json();
+  if(!json.ok) throw new Error(json.error || 'Failed to load');
+  return json.data;
+}
+
+async function apiPost(payload){
+  // text/plain avoids a CORS preflight against the Apps Script endpoint
+  const res = await fetch(SCRIPT_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  });
+  const json = await res.json();
+  if(!json.ok) throw new Error(json.error || 'Request failed');
+  return json;
+}
+
+async function loadRecords(){
+  if(!isConfigured()){
+    $('#configBanner').style.display = 'flex';
+    setSync('err', 'not connected');
+    render();
+    return;
+  }
+  setSync('loading', 'syncing…');
+  try{
+    records = await apiGet();
+    setSync('ok', 'synced ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
+    render();
+  }catch(err){
+    setSync('err', 'sync failed');
+    console.error(err);
+  }
+}
+
+function render(){
+  const filtered = records
+    .filter(r => currentFilter === 'all' || statusOf(r) === currentFilter)
+    .filter(r => {
+      if(!currentSearch) return true;
+      const q = currentSearch.toLowerCase();
+      return (r.clientName||'').toLowerCase().includes(q) || (r.clientEmail||'').toLowerCase().includes(q);
+    })
+    .sort((a,b) => {
+      const da = daysSince(a.lastSentDate) ?? -1;
+      const db = daysSince(b.lastSentDate) ?? -1;
+      return db - da;
+    });
+
+  $('#statTotal').textContent = records.length;
+  $('#statFollow').textContent = records.filter(r => statusOf(r)==='follow').length;
+  $('#statWaiting').textContent = records.filter(r => statusOf(r)==='waiting').length;
+  $('#statResponded').textContent = records.filter(r => statusOf(r)==='responded').length;
+
+  rowsEl.innerHTML = '';
+  $('#emptyState').style.display = (records.length === 0) ? 'block' : 'none';
+
+  filtered.forEach(rec => {
+    const status = statusOf(rec);
+    const d = daysSince(rec.lastSentDate);
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.style.setProperty('--edge', status==='follow'?'var(--red)':status==='waiting'?'var(--amber)':'var(--green)');
+    row.style.setProperty('borderLeft', '3px solid ' + (status==='follow'?'var(--red)':status==='waiting'?'var(--amber)':'var(--green)'));
+
+    row.innerHTML = `
+      <div class="signal">
+        <i class="${status==='follow' ? 'on-red' : ''}"></i>
+        <i class="${status==='waiting' ? 'on-amber' : ''}"></i>
+        <i class="${status==='responded' ? 'on-green' : ''}"></i>
+      </div>
+      <div class="client">
+        <div class="name">${escapeHtml(rec.clientName || '—')}</div>
+        <div class="email">${escapeHtml(rec.clientEmail || '')}</div>
+      </div>
+      <div class="subject">
+        ${escapeHtml(rec.lastSubject || '—')}
+        ${rec.notes ? `<div class="notes">${escapeHtml(rec.notes)}</div>` : ''}
+      </div>
+      <div class="sent-date">${fmtDate(rec.lastSentDate)}</div>
+      <div class="sent-date">${d === null ? '—' : d + 'd'}</div>
+      <div>
+        <span class="status-pill ${status}">${status==='follow'?'Follow up':status==='waiting'?'Waiting':'Responded'}</span>
+      </div>
+      <div class="row-actions">
+        ${status !== 'responded' ? `<button class="icon-btn respond" title="Mark responded" data-action="respond" data-id="${rec.id}">✓</button>` : ''}
+        <button class="icon-btn" title="Edit" data-action="edit" data-id="${rec.id}">✎</button>
+        <button class="icon-btn del" title="Delete" data-action="delete" data-id="${rec.id}">✕</button>
+      </div>
+    `;
+    rowsEl.appendChild(row);
+  });
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ---------- events ---------- */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentFilter = tab.dataset.filter;
+    render();
+  });
+});
+
+$('#searchInput').addEventListener('input', (e) => {
+  currentSearch = e.target.value;
+  render();
+});
+
+$('#refreshBtn').addEventListener('click', loadRecords);
+
+function openModal(rec){
+  $('#modalError').style.display = 'none';
+  if(rec){
+    $('#modalTitle').textContent = 'Edit record';
+    $('#recordId').value = rec.id;
+    $('#clientName').value = rec.clientName || '';
+    $('#clientEmail').value = rec.clientEmail || '';
+    $('#lastSubject').value = rec.lastSubject || '';
+    $('#lastSentDate').value = rec.lastSentDate || '';
+    $('#notes').value = rec.notes || '';
+    $('#respondedDisplay').value = (rec.responded===true||rec.responded==='TRUE') ? 'Yes — ' + fmtDate(rec.responseDate) : 'Not yet';
+  }else{
+    $('#modalTitle').textContent = 'Log an email';
+    form.reset();
+    $('#recordId').value = '';
+    $('#lastSentDate').value = new Date().toISOString().slice(0,10);
+    $('#respondedDisplay').value = '';
+  }
+  overlay.classList.add('open');
+}
+function closeModal(){ overlay.classList.remove('open'); }
+
+$('#addBtn').addEventListener('click', () => openModal(null));
+$('#emptyAddBtn').addEventListener('click', () => openModal(null));
+$('#cancelBtn').addEventListener('click', closeModal);
+overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if(!isConfigured()){
+    $('#modalError').textContent = 'Set SCRIPT_URL at the top of index.html first.';
+    $('#modalError').style.display = 'block';
+    return;
+  }
+  const id = $('#recordId').value;
+  const record = {
+    clientName: $('#clientName').value.trim(),
+    clientEmail: $('#clientEmail').value.trim(),
+    lastSubject: $('#lastSubject').value.trim(),
+    lastSentDate: $('#lastSentDate').value,
+    notes: $('#notes').value.trim()
+  };
+  $('#saveBtn').disabled = true;
+  $('#saveBtn').textContent = 'Saving…';
+  try{
+    if(id){
+      await apiPost({ action:'update', id, record });
+    }else{
+      record.responded = false;
+      await apiPost({ action:'add', record });
+    }
+    closeModal();
+    await loadRecords();
+  }catch(err){
+    $('#modalError').textContent = err.message;
+    $('#modalError').style.display = 'block';
+  }finally{
+    $('#saveBtn').disabled = false;
+    $('#saveBtn').textContent = 'Save';
+  }
+});
+
+rowsEl.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-action]');
+  if(!btn) return;
+  const id = btn.dataset.id;
+  const rec = records.find(r => r.id === id);
+  const action = btn.dataset.action;
+
+  if(action === 'edit'){
+    openModal(rec);
+  }else if(action === 'delete'){
+    if(!confirm(`Delete the record for ${rec.clientName}?`)) return;
+    try{
+      await apiPost({ action:'delete', id });
+      await loadRecords();
+    }catch(err){ alert(err.message); }
+  }else if(action === 'respond'){
+    try{
+      await apiPost({
+        action:'update', id,
+        record:{ responded:true, responseDate: new Date().toISOString().slice(0,10) }
+      });
+      await loadRecords();
+    }catch(err){ alert(err.message); }
+  }
+});
+
+loadRecords();
+</script>
+</body>
+</html>
